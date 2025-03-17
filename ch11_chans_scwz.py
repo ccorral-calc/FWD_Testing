@@ -41,13 +41,16 @@
 #
 import os
 import sys
+from datetime import datetime
+import logging
+
+logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+logging.info(current_time)
 
 pkt_hdr_len = 40
-
 hdr_bptr = 0
-
 sub_mask = 0x03
-
 scwz_mask = 0x3C
 
 input_file_size = os.path.getsize(sys.argv[1])
@@ -57,10 +60,11 @@ input_file_size = os.path.getsize(sys.argv[1])
 #----------------------------------------------------------------------------------
 
 with open(sys.argv[1], 'rb') as f_in:
-#, \
 #     open(sys.argv[2] + '.hdrs', 'wb') as f_out:
 
     f_handles = {}
+    # Printing to file and terminal
+    logging.info(f'File Size (bytes): {input_file_size}')
     print(f'\nFile Size (bytes): {input_file_size}')
     input_file_bytes = int(input_file_size)
 
@@ -75,8 +79,10 @@ with open(sys.argv[1], 'rb') as f_in:
         data_type = int(pkt_leader[15])     # 48=SS, 80=H&S, 88=1394, 95=FWD_Debug=0x5F=Reserved_1394
         trans_cnt = int(pkt_leader[36]) + int(pkt_leader[37])*256
 
+        logging.info(f'Chan: {chan_num}, PktLen: {pkt_bytes}, SeqNum: {seq_num}, Type: {data_type}, Trans: {trans_cnt}')
         print(f'Chan: {chan_num}, PktLen: {pkt_bytes}, SeqNum: {seq_num}, Type: {data_type}, Trans: {trans_cnt}')
         if trans_cnt == 0:
+            logging.info(f'This is 1394 Bus Reset Packet')
             print(f'This is 1394 Bus Reset Packet')
 
         pkt_bytes = pkt_bytes - 40          # still includes packet trailer (filler+checksum) in addition to all packet data - CSDW
@@ -95,9 +101,11 @@ with open(sys.argv[1], 'rb') as f_in:
                 msg_len =int(pkt_data[data_ptr+8])*256 + int(pkt_data[data_ptr+9])          # length from 1394 header word excludes 12-byte 1394 wrapper = LM message length
                 vmc_chan = int(pkt_data[data_ptr+10])
                 if vmc_chan == 31:
+                    logging.info(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, LM_len: {msg_len}, VMC_chan: {vmc_chan}, STOF')
                     print(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, LM_len: {msg_len}, VMC_chan: {vmc_chan}, STOF')
                 else:
                     msg_id = int(pkt_data[data_ptr+19]) + (int(pkt_data[data_ptr+18])*256) + (int(pkt_data[data_ptr+17])*16384) + (int(pkt_data[data_ptr+16])*16777216)
+                    logging.info(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, LM_len: {msg_len}, VMC_chan: {vmc_chan}, MsgID: {msg_id}')
                     print(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, LM_len: {msg_len}, VMC_chan: {vmc_chan}, MsgID: {msg_id}')
                 item_ctr = item_ctr + 1
                 data_ptr = data_ptr + msg_len + 20
@@ -105,6 +113,7 @@ with open(sys.argv[1], 'rb') as f_in:
                 ss_len = int(pkt_data[data_ptr+8]) + int(pkt_data[data_ptr+9])*256
                 ss_sub = int(pkt_data[data_ptr+10]) + int(pkt_data[data_ptr+11]  & sub_mask)*256
                 ss_sel = int((pkt_data[data_ptr+11] & scwz_mask) >> 2)
+                logging.info(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_chan: {ss_sub}, SS_sel: {ss_sel}')
                 print(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_chan: {ss_sub}, SS_sel: {ss_sel}')
                 item_ctr = item_ctr + 1
                 data_ptr = data_ptr + ss_len + 12
