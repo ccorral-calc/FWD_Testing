@@ -50,11 +50,6 @@ logging.basicConfig(filename='output.log', level=logging.INFO, format='%(asctime
 current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 logging.info(current_time)
 
-# Usage
-# if len(sys.argv) < 3:
-#     print(f'Usage: python3 {__file__} <input file.ch10> <channel_number>')
-#     sys.exit(1)
-
 # Command line argument parsing
 parser = argparse.ArgumentParser(description='Parse a Ch10 file')
 parser.add_argument('input_file', help='Input file to parse')
@@ -64,7 +59,6 @@ args = parser.parse_args()
 input_file = args.input_file    # Arg 1
 input_chan_num = args.channel_number # Arg 2 (if not given, will parse every channel)
 
-# input_chan_num:int  = int(sys.argv[2])
 pkt_hdr_len = 40
 hdr_bptr = 0
 sub_mask = 0x03
@@ -87,6 +81,11 @@ with open(sys.argv[1], 'rb') as f_in:
     # Reading file
     input_file_bytes = int(input_file_size)
     while input_file_bytes > 0:           # process packets loop
+
+        if input_file_bytes < 40:
+            logging.info('Less than 40 bytes left to read, exiting gracefully.')
+            print('Less than 40 bytes left to read, exiting gracefully.')
+            break
 
         pkt_leader = f_in.read(40)
         input_file_bytes = input_file_bytes - 40          # all packets have a 40-byte header+CSDW
@@ -114,8 +113,12 @@ with open(sys.argv[1], 'rb') as f_in:
             data_ptr = 0
             item_ctr = 1
 
-
             while trans_cnt > 0:
+                if data_ptr + 7 >= len(pkt_data):
+                    logging.info('Not enough data left to read, exiting gracefully.')
+                    print('Not enough data left to read, exiting gracefully.')
+                    break
+
                 nano = int(pkt_data[data_ptr]) + (int(pkt_data[data_ptr+1])*256) + (int(pkt_data[data_ptr+2])*16384) + (int(pkt_data[data_ptr+3])*16777216)
                 second = int(pkt_data[data_ptr+4]) + (int(pkt_data[data_ptr+5])*256) + (int(pkt_data[data_ptr+6])*16384) + (int(pkt_data[data_ptr+7])*16777216)
                 trans_cnt = trans_cnt - 1
