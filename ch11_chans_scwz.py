@@ -64,7 +64,7 @@ args = parser.parse_args()
 input_file = args.input_file    # Arg 1
 input_chan_num = args.channel_number # Arg 2 (if not given, will parse every channel)
 
-# input_chan_num:int  = int(sys.argv[2]) 
+# input_chan_num:int  = int(sys.argv[2])
 pkt_hdr_len = 40
 hdr_bptr = 0
 sub_mask = 0x03
@@ -83,7 +83,7 @@ with open(sys.argv[1], 'rb') as f_in:
     # Printing to file and terminal
     logging.info(f'File Size (bytes): {input_file_size}')
     print(f'\nFile Size (bytes): {input_file_size}')
-    
+
     # Reading file
     input_file_bytes = int(input_file_size)
     while input_file_bytes > 0:           # process packets loop
@@ -135,15 +135,15 @@ with open(sys.argv[1], 'rb') as f_in:
                     ss_len = int(pkt_data[data_ptr+8]) + int(pkt_data[data_ptr+9])*256
                     ss_sub = int(pkt_data[data_ptr+10]) + int(pkt_data[data_ptr+11]  & sub_mask)*256
                     ss_sel = int((pkt_data[data_ptr+11] & scwz_mask) >> 2)
-                    logging.info(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_chan: {ss_sub}, SS_sel: {ss_sel}')
-                    print(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_chan: {ss_sub}, SS_sel: {ss_sel}')
+                    logging.info(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_subch: {ss_sub}, SS_cntrs: {ss_sel}')
+                    print(f'Item: {item_ctr}, Nano: {nano}, Second: {second}, SS_len: {ss_len}, SS_subch: {ss_sub}, SS_cntrs: {ss_sel}')
                     item_ctr = item_ctr + 1
                     data_ptr = data_ptr + ss_len + 12
-        else: 
+        else:
             # Skip the packet data if the channel does not match
             pkt_bytes = pkt_bytes - 40
             f_in.read(pkt_bytes)
             input_file_bytes = input_file_bytes - pkt_bytes
-         
+
 for key in f_handles:
     f_handles[key].close()
